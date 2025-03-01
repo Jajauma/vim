@@ -66,9 +66,11 @@ if has('unix')
   endif
 elseif has('win32')
   export def Launch(args: string)
-    const shell = (&shell =~? '\<cmd\.exe\>') ? '' : 'cmd.exe /c'
-    const quotes = empty(shell) ? '' : '""'
-    execute $'silent ! {shell} start {quotes} /b {args} {Redir()}' | redraw!
+    if &shell =~? '\<cmd\.exe\>'
+      execute $'silent ! start {args}' | redraw!
+    else
+      execute $'silent ! cmd.exe /c start "" /b {args} {Redir()}' | redraw!
+    endif
   enddef
 else
   export def Launch(dummy: string)
@@ -121,7 +123,15 @@ def Viewer(): string
 enddef
 
 export def Open(file: string)
+  var save_shellslash: bool
+  if has('win32') && exists('+shellslash')
+    save_shellslash = &shellslash
+    &shellslash = false
+  endif
   Launch($"{Viewer()} {shellescape(file, 1)}")
+  if has('win32') && exists('+shellslash')
+    &shellslash = save_shellslash
+  endif
 enddef
 
 # Uncomment this line to check for compilation errors early
